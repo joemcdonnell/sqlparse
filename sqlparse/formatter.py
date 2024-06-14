@@ -19,7 +19,7 @@ def validate_options(options):
                             '{!r}'.format(kwcase))
 
     idcase = options.get('identifier_case')
-    if idcase not in [None, 'upper', 'lower', 'capitalize']:
+    if idcase not in [None, 'upper', 'lower', 'capitalize', 'hash']:
         raise SQLParseError('Invalid value for identifier_case: '
                             '{!r}'.format(idcase))
 
@@ -148,6 +148,9 @@ def build_filter_stack(stack, options):
     if options.get('truncate_strings'):
         stack.preprocess.append(filters.TruncateStringFilter(
             width=options['truncate_strings'], char=options['truncate_char']))
+
+    if options.get('hash_strings'):
+        stack.preprocess.append(filters.HashStringFilter())
 
     if options.get('use_space_around_operators', False):
         stack.enable_grouping()

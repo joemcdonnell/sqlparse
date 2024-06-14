@@ -30,7 +30,7 @@ from sqlparse.exceptions import SQLParseError
 # TODO: Add CLI Tests
 # TODO: Simplify formatter by using argparse `type` arguments
 def create_parser():
-    _CASE_CHOICES = ['upper', 'lower', 'capitalize']
+    _CASE_CHOICES = ['upper', 'lower', 'capitalize', 'hash']
 
     parser = argparse.ArgumentParser(
         prog='sqlformat',
@@ -144,6 +144,11 @@ def create_parser():
         dest='encoding',
         default='utf-8',
         help='Specify the input encoding (default utf-8)')
+
+    group.add_argument(
+        '--hash_strings',
+        action='store_true',
+        default=False)
 
     return parser
 

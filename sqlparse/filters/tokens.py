@@ -6,12 +6,24 @@
 # the BSD License: https://opensource.org/licenses/BSD-3-Clause
 
 from sqlparse import tokens as T
+from hashlib import sha1
 
+def anonymize(string):
+    if string.lower() in ['sum', 'if', 'last_value', 'trim', 'nullif', 'concat', 'cast', 'varchar', 'concat_ws', 'count', 'coalesce', 'min', 'max', 'lead', 'row_number', 'nulls', 'null', 'datediff', 'lag']:
+        return string
+
+    salt = "eaa35b02507a834edd0d219343fd4bd075f21762"
+    # Identifiers can't start with a number, so we prepend 'i' to make
+    # it always work. This is harmless for string constants as well.
+    return "i" + sha1((salt + string).lower().encode('utf-8')).hexdigest()[:8]
 
 class _CaseFilter:
     ttype = None
 
     def __init__(self, case=None):
+        if case == 'hash':
+            self.convert = anonymize
+            return
         case = case or 'upper'
         self.convert = getattr(str, case)
 
@@ -56,4 +68,25 @@ class TruncateStringFilter:
 
             if len(inner) > self.width:
                 value = ''.join((quote, inner[:self.width], self.char, quote))
+            yield ttype, value
+
+class HashStringFilter:
+    def __init__(self):
+        self.hasher = sha1
+
+    def process(self, stream):
+        for ttype, value in stream:
+            if ttype != T.Literal.String.Single:
+                yield ttype, value
+                continue
+
+            if value[:2] == "''":
+                inner = value[2:-2]
+                quote = "''"
+            else:
+                inner = value[1:-1]
+                quote = "'"
+
+            hashed_inner = anonymize(inner)
+            value = ''.join((quote, hashed_inner, quote))
             yield ttype, value
